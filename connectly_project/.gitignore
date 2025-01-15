@@ -1,0 +1,23 @@
+# Python
+*.pyc
+__pycache__/
+*.sqlite3
+
+# Virtual environment
+/env/
+
+# IDEs/Editors
+.vscode/
+
+# Django
+/migrations/
+*.log
+
+# System files
+.DS_Store
+
+# Testing
+.pytest_cache/
+
+# Environment variables
+.env
