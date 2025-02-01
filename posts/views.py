@@ -1,12 +1,29 @@
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import User, Post
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login
+
+from rest_framework.permissions import IsAuthenticated, BasePermission
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .models import Post
+from .serializers import PostSerializer
+from .permissions import IsTaskAssignee, IsAdmin  # Custom permissions
+
+from singletons.logger_singleton import LoggerSingleton
+
+from factories.task_factory import TaskFactory
+from rest_framework import status
+from factories.post_factory import PostFactory
+
 
 # Retrieve all users (GET)
 def get_users(request):
     try:
-        users = list(User.objects.values('id', 'username', 'email', 'created_at'))
+        users = list(User.objects.values('id', 'username', 'email', 'date_joined'))
         return JsonResponse(users, safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
@@ -17,10 +34,21 @@ def create_user(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            user = User.objects.create(username=data['username'], email=data['email'])
-            return JsonResponse({'id': user.id, 'message': 'User created successfully'}, status=201)
+            username = data.get("username")
+            
+            # Check if the username already exists
+            if User.objects.filter(username=username).exists():
+                return JsonResponse({"error": "Username already exists!"}, status=400)
+            
+            # Create a new user with a hashed password
+            user = User.objects.create_user(
+                username=username, 
+                email=data.get("email", ""),  # Optional email field
+                password=data.get("password")  # Secure password hashing
+            )
+            return JsonResponse({"message": "User created successfully!", "user_id": user.id}, status=201)
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
+            return JsonResponse({"error": str(e)}, status=400)
 
 # Retrieve all posts (GET)
 def get_posts(request):
@@ -43,7 +71,8 @@ def create_post(request):
             return JsonResponse({'error': 'Author not found'}, status=404)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
-        
+
+# Delete a user (DELETE)
 @csrf_exempt
 def delete_user(request, user_id):
     if request.method == 'DELETE':
@@ -55,7 +84,8 @@ def delete_user(request, user_id):
             return JsonResponse({'error': 'User not found'}, status=404)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
-        
+
+# Update a user (PUT)
 @csrf_exempt
 def update_user(request, user_id):
     if request.method == 'PUT':
@@ -70,14 +100,109 @@ def update_user(request, user_id):
             return JsonResponse({'error': 'User not found'}, status=404)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
+        
+class TaskDetailView(APIView):
+    permission_classes = [IsAuthenticated, IsTaskAssignee]
+
+    def get(self, request, pk):
+        task = Task.objects.get(pk=pk)
+        self.check_object_permissions(request, task)
+        return Response({"title": task.title, "description": task.description})
+
+    
+class SecureView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
 
-# What This Does:
-# Defines four functions for handling CRUD operations:
-# get_users(request) → Retrieves all users.
-# create_user(request) → Creates a new user.
-# get_posts(request) → Retrieves all posts.
-# create_post(request) → Creates a new post.
-# Uses JsonResponse to return data in JSON format.
-# Handles errors like missing authors or invalid requests.
-# @csrf_exempt is used to allow API calls without CSRF protection (only for testing, not for production). 
+    def get(self, request):
+        return Response({"message": "Secure endpoint accessed!"})
+    
+
+# User login view
+def user_login(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return JsonResponse({"message": "Login successful!"}, status=200)
+        else:
+            return JsonResponse({"error": "Invalid credentials!"}, status=400)
+
+# Restrict access to admins only
+class AdminPostEditView(APIView):
+    permission_classes = [IsAdmin]  # Ensures only admins can edit
+
+    def put(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)  # Check if post exists
+        serializer = PostSerializer(post, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Post updated successfully", "post": serializer.data}, status=200)
+        return Response(serializer.errors, status=400)
+        
+# Custom permission class to check if the user is an admin
+class IsAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_staff
+
+class PostListCreate(APIView):
+    def get(self, request):
+        posts = Post.objects.all()
+        serializer = PostSerializer(posts, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = PostSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+# singletons logger
+logger = LoggerSingleton().get_logger()
+
+
+def some_view(request):
+    logger.info("Processing request...")
+    return Response({"message": "Request processed"})
+
+# singletons config_manager???
+logger = LoggerSingleton().get_logger()
+logger.info("API initialized successfully.")
+
+
+# factory
+class CreateTaskView(APIView):
+    def post(self, request):
+        data = request.data
+        try:
+            task = TaskFactory.create_task(
+                task_type=data['task_type'],
+                title=data['title'],
+                description=data.get('description', ''),
+                assigned_to=data['assigned_to'],
+                metadata=data.get('metadata', {})
+            )
+            return Response({'message': 'Task created successfully!', 'task_id': task.id}, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# another factory?
+class CreatePostView(APIView):
+    def post(self, request):
+        data = request.data
+        try:
+            post = PostFactory.create_post(
+                post_type=data['post_type'],
+                title=data['title'],
+                content=data.get('content', ''),
+                metadata=data.get('metadata', {})
+            )
+            return Response({'message': 'Post created successfully!', 'post_id': post.id}, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

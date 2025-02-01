@@ -21,7 +21,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),  # Admin routes
     path('api-auth/', include('rest_framework.urls')),  # DRF login/logout
     path('posts/', include('posts.urls')),  # Includes all URLs from the posts app
-
+    path('tasks/', include('tasks.urls')),
 ]
 
 
