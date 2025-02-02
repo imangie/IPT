@@ -10,3 +10,5 @@ urlpatterns = [
     path('<int:post_id>/edit/', AdminPostEditView.as_view(), name='admin_post_edit'),
 ]
 
+# make sure to check if the path('<int:post_id>/edit/', AdminPostEditView.as_view(), name='admin_post_edit'), 
+# only stars with ('<int:post----) and not ('<post/int:----) as to not double the url routing
