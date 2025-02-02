@@ -1,7 +1,17 @@
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import User, Post
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login
+
+from rest_framework.permissions import IsAuthenticated, BasePermission
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .models import Post
+from .serializers import PostSerializer
+from .permissions import IsTaskAssignee, IsAdmin
 
 # Retrieve all users (GET)
 def get_users(request):
@@ -71,13 +81,45 @@ def update_user(request, user_id):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
 
+# User login view, wanted to check regular user and admin user thats why i added this
+def user_login(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return JsonResponse({"message": "Login successful!"}, status=200)
+        else:
+            return JsonResponse({"error": "Invalid credentials!"}, status=400)
 
-# What This Does:
-# Defines four functions for handling CRUD operations:
-# get_users(request) → Retrieves all users.
-# create_user(request) → Creates a new user.
-# get_posts(request) → Retrieves all posts.
-# create_post(request) → Creates a new post.
-# Uses JsonResponse to return data in JSON format.
-# Handles errors like missing authors or invalid requests.
-# @csrf_exempt is used to allow API calls without CSRF protection (only for testing, not for production). 
+# Restrict access to admins only
+class AdminPostEditView(APIView):
+    permission_classes = [IsAdmin]  # Ensures only admins can edit
+
+    def put(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)  # Check if post exists
+        serializer = PostSerializer(post, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Post updated successfully", "post": serializer.data}, status=200)
+        return Response(serializer.errors, status=400)
+        
+# Custom permission class to check if the user is an admin
+class IsAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_staff
+
+class PostListCreate(APIView):
+    def get(self, request):
+        posts = Post.objects.all()
+        serializer = PostSerializer(posts, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = PostSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
