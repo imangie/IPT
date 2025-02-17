@@ -75,6 +75,9 @@ ACCOUNT_LOGIN_METHODS = {'username'}
 ACCOUNT_EMAIL_REQUIRED = False
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 
+# Skip Django-Allauth confirmation screen
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
 # Google OAuth Settings 2/17/25
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
@@ -95,13 +98,16 @@ SOCIALACCOUNT_PROVIDERS = {
         ],
         'EXCHANGE_TOKEN': True,
         'VERIFIED_EMAIL': False,
-        'VERSION': 'v17.0',  # Update this with Facebook's latest Graph API version
+        'VERSION': 'v17.0',  
     }
 }
 
 # Your facebook credentials
 SOCIAL_AUTH_FACEBOOK_KEY = '1162194018613222'  
 SOCIAL_AUTH_FACEBOOK_SECRET = 'b6e828df2ee03c38837acee6e7e85443'
+
+# Disable signup
+SOCIALACCOUNT_SIGNUP = False
 
 
 REST_FRAMEWORK = {

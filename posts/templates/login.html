@@ -4,7 +4,7 @@
 <head>
     <!-- Load static files -->
     {% load static %}
-    {% load socialaccount %} <!-- ✅ Added this to enable Google login -->
+    {% load socialaccount %} <!-- Added this to enable Google login -->
     <link rel="stylesheet" type="text/css" href="{% static 'CSS/style.css' %}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -48,14 +48,16 @@
                     <p>Or</p>
                 </div>
 
+                {% load socialaccount %}
                 <!-- Google Login Button -->
                 <div class="google-signin">
-                    <a href="{% provider_login_url 'google' %}">
+                    <a href="{% provider_login_url 'google' process='login' %}?prompt=select_account">
                         <button class="google-login">
                             <img src="{% static 'Images/google-logo.png' %}" class="button-icon"> Sign in with Google
                         </button>
                     </a>
                 </div>
+
 
                 <!-- Facebook Login Button -->
                 <div class="facebook-signin">
