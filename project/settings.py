@@ -56,6 +56,8 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',  # Add providers as needed
+    'allauth.socialaccount.providers.facebook',
+    'social_django',  
 ]
 
 AUTH_USER_MODEL = 'posts.User'          #ADDED 2 56 2025_ 12:59 PM for WEB LOGIN
@@ -66,6 +68,41 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 SITE_ID = 1
+
+# Django Allauth Configuration 2/17/25
+# Use only username for login
+ACCOUNT_LOGIN_METHODS = {'username'}
+ACCOUNT_EMAIL_REQUIRED = False
+ACCOUNT_EMAIL_VERIFICATION = "optional"
+
+# Google OAuth Settings 2/17/25
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
+
+# Facebook OAuth Settings 2/17/25
+SOCIALACCOUNT_PROVIDERS = {
+    'facebook': {
+        'METHOD': 'oauth2',
+        'SCOPE': ['email', 'public_profile'],
+        'AUTH_PARAMS': {'auth_type': 'reauthenticate'},
+        'FIELDS': [
+            'id', 'email', 'first_name', 'last_name', 'name'
+        ],
+        'EXCHANGE_TOKEN': True,
+        'VERIFIED_EMAIL': False,
+        'VERSION': 'v17.0',  # Update this with Facebook's latest Graph API version
+    }
+}
+
+# Your facebook credentials
+SOCIAL_AUTH_FACEBOOK_KEY = '1162194018613222'  
+SOCIAL_AUTH_FACEBOOK_SECRET = 'b6e828df2ee03c38837acee6e7e85443'
+
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -92,10 +129,12 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'project.urls'
 
+import os
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'posts/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -107,6 +146,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 WSGI_APPLICATION = 'project.wsgi.application'
 
@@ -206,7 +246,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/' 
+
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'posts/static')] 
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
