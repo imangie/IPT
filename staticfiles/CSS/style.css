@@ -32,7 +32,6 @@ a {
     vertical-align: middle;
 }
 
-/* Full-screen flex container */
 .main-container {
     display: flex;
     width: 100%;
@@ -62,8 +61,8 @@ a {
 }
 
 .login-form h1 {
-    font-size: 36pxpx;
-    margin-bottom: 30px;
+    font-size: 45px;
+    margin-bottom: 45px;
     color: #162D3A;
 }
 
@@ -91,7 +90,7 @@ a {
     margin: 5px 0;
     border: 1px solid #D4D7E3;
     border-radius: 5px;
-    color: #ffffff;
+    color: #313957;
     font-size: 14px;
 }
 
@@ -123,7 +122,6 @@ a {
 
 .or-container p {
     margin: 0 10px;
-    /* Adjust spacing around 'Or' */
     color: #294957;
     font-weight: none;
 }
@@ -133,9 +131,7 @@ a {
     content: "";
     flex: 1;
     border-bottom: 1px solid #CFDFE2;
-    /* Line color */
     margin: 0 10px;
-    /* Space between text and line */
 }
 
 /* General button styles */

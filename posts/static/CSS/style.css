@@ -82,7 +82,7 @@ a {
 }
 
 
-/* Email and password input fields */
+/* username and password input fields */
 .login-form input {
     background-color: #F7FBFF;
     width: 93%;
@@ -92,6 +92,11 @@ a {
     border-radius: 5px;
     color: #313957;
     font-size: 14px;
+}
+
+.login-form input:focus {
+    outline: none;
+    border-color: #007BFF;
 }
 
 .forgot-password-container {
@@ -151,6 +156,10 @@ a {
     margin-top: 25px;
 }
 
+.primary-button:hover {
+    background-color: #234153;
+}
+
 /* Google login button */
 .google-login {
     background-color: #F7FBFF;
@@ -169,6 +178,11 @@ a {
     margin-bottom: 30px;
 }
 
+.facebook-login:hover,
+.google-login:hover {
+    background-color: #eef3f8;
+}
+
 .login-form a {
     color: #007BFF;
     text-decoration: none;
@@ -177,4 +191,9 @@ a {
 .login-form p:last-of-type {
     text-align: center;
     font-size: 14px;
+}
+
+.login-form a:hover {
+    color: #0056b3;
+    text-decoration: underline;
 }
