@@ -2,12 +2,14 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from . import views
+from posts import views
+
 
 urlpatterns = [
-    path('register/', views.register, name='register'), #ADDED 2 5 2025_ 7:30 PM
+    path('register/', views.register, name='register'),
     path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(template_name='logout.html'), name='logout'),
-    path('', views.home, name='home'),                  #ADDED 2 5 2025_ 7:30 PM
+    path('', views.home, name='home'),
 
     path('api/users/', views.UserListCreateView.as_view(), name='user_list_create'),
     path('api/users/<int:pk>/', views.UserDetailView.as_view(), name='user_detail'),
@@ -29,4 +31,6 @@ urlpatterns = [
     # Admin Only View
     path('api/admin/', views.AdminOnlyView.as_view(), name='admin_only'),
 
+    # Add the Feed View path
+    path('api/feed/', views.PostFeedView.as_view(), name='post_feed'),  # This is the new endpoint
 ]

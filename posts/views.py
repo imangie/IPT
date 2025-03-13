@@ -14,6 +14,12 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from rest_framework_simplejwt.tokens import RefreshToken
 
+#TA
+from django.core.cache import cache
+from rest_framework.pagination import PageNumberPagination
+from django.core.paginator import Paginator
+
+
 logger = SingletonLogger().get_logger()
 
 @login_required
@@ -264,3 +270,28 @@ class CommentViewSet(viewsets.ModelViewSet):
         comment.save()
         logger.info(f'Comment unliked by {request.user.username}: {comment.text[:30]}')
         return Response({'status': 'Comment unliked'}, status=status.HTTP_200_OK)
+
+# Pagination for the posts feed
+class PostFeedView(APIView):
+    def get(self, request, *args, **kwargs):
+        cache_key = 'feed_posts_page_{}'.format(request.GET.get('page', 1))  
+        cached_posts = cache.get(cache_key)
+        
+        if cached_posts:
+            response = Response(cached_posts)
+            response['X-Cache-Status'] = 'HIT'
+            return response
+
+        posts = Post.objects.all().order_by('-created_at')
+        paginator = Paginator(posts, 10) 
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        serializer = PostSerializer(page_obj, many=True)
+
+        cache.set(cache_key, serializer.data, timeout=60 * 15)
+
+        response = Response(serializer.data)
+        response['X-Cache-Status'] = 'MISS' 
+
+        return response
